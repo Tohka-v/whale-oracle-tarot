@@ -14,10 +14,15 @@ const EDGE = 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe'
    不要用 URL.pathname：它保留百分号编码，中文路径下会凭空造出
    D:\Claudecode%E5%AD%98... 这样的目录，把浏览器 profile 全写进去。 */
 const PORT = 9348;
-/* profile 目录带上调试端口：同一台机器上并发跑两次（比如根目录一次、
-   子目录一次）时，两个 Edge 实例不能共用同一份 profile——
-   上一轮退出得慢一点，这一轮 rm -rf 就会撞 EBUSY。
-   截图固定落 .shots/e2e，跑子目录那次会覆盖，看的时候注意顺序。 */
+/* --proxy=host:port：让**浏览器**也走代理。
+   验线上站（GitHub Pages）时需要——本机的系统代理是关着的，Edge 不会自己用
+   HTTPS_PROXY 环境变量，而 --proxy-server 是启动参数，不碰系统设置。
+   本地跑（127.0.0.1）不需要它，保持默认即可。 */
+const PROXY = (() => {
+  const i = process.argv.indexOf('--proxy');
+  return i >= 0 && process.argv[i + 1] && !process.argv[i + 1].startsWith('--')
+    ? process.argv[i + 1] : null;
+})();
 const PROFILE = join(tmpdir(), `dsh-e2e-profile-${PORT}`);
 const SHOTS = resolve('.shots/e2e');
 /* 默认跑本机根的 4173；--site 可以指到别处，用来验「部署在子目录」的场景
@@ -33,6 +38,7 @@ await mkdir(PROFILE, { recursive: true });
 await mkdir(SHOTS, { recursive: true });
 
 const child = spawn(EDGE, ['--headless=new', '--no-sandbox', '--disable-gpu', '--disable-crash-reporter',
+  ...(PROXY ? [`--proxy-server=${PROXY}`] : []),
   `--user-data-dir=${PROFILE}`, `--remote-debugging-port=${PORT}`, '--window-size=1440,900', 'about:blank'], { stdio: 'ignore' });
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));

@@ -318,6 +318,52 @@ python tools/make-font-subset.py --check # 检查现有子集是否漏字（新�
 
 ---
 
+## 部署（GitHub Pages）
+
+- **仓库**：https://github.com/Tohka-v/whale-oracle-tarot
+- **线上地址**：https://tohka-v.github.io/whale-oracle-tarot/
+- **发布方式**：推 `main` → GitHub Actions 跑 [`tools/build-dist.mjs`](tools/build-dist.mjs)
+  组装出 `dist/` → 用 `actions/deploy-pages` 发上去（见 [.github/workflows/deploy.yml](.github/workflows/deploy.yml)）
+
+**为什么不在 Settings 里选「Deploy from a branch」**：那会把整个仓库当网站发出去 ——
+`tools/`（生成台、出图脚本、各种 check.html）、`维护记录.md`、`README.md`、品牌原图候选
+全都会变成公开可访问的地址。走 Actions 只发布 `dist/`，公开面干净得多。
+
+```bash
+node tools/build-dist.mjs              # 本地组装，产物在 dist/（已 gitignore）
+node tools/build-dist.mjs --list       # 只列清单
+```
+
+`build-dist.mjs` 收尾会做**引用自检**：从 `index.html` / `styles/fonts.css` / `sw.js` 里
+抠出全部本地引用逐个确认存在。漏拷一个文件在本地看不出来，上线就是 404 —— 这一步就是为了
+不让它发生（实测 37 个引用）。产物约 **23.9 MB**，其中 22 MB 是 78 张卡面。
+
+**发布这个站（改完代码）**：
+
+```bash
+git add -A && git commit -m "说明" && git push      # Actions 自动发布，约 30 秒
+gh run list --repo Tohka-v/whale-oracle-tarot       # 看构建状态
+```
+
+**两个踩过的坑**：
+
+1. **`gh` 的 token 默认没有 `workflow` 权限**，第一次推 `.github/workflows/deploy.yml` 会被拒
+   （`refusing to allow an OAuth App to create or update workflow … without workflow scope`）。
+   补权限：`gh auth refresh -h github.com -s workflow`，再推一次。
+2. **本机代理把 `github.com` 分到了直连**时，本地一切正常但推不上去（TLS 握手被重置），
+   而 `api.github.com` 是通的。判断方法：用 CONNECT 分别探两个域名，隧道通、TLS 被重置 = 规则问题；
+   把代理切到全局模式即可。**这个坑跟仓库无关，是网络环境的事。**
+
+**本地验收可以直接打在线上站上**（Edge 用 `--proxy-server` 走代理，不动系统代理设置）：
+
+```bash
+node tools/verify-e2e.mjs --site https://tohka-v.github.io/whale-oracle-tarot/ --proxy 127.0.0.1:7897
+```
+
+`--site` 还能指向子目录部署的本地副本（本仓库就是这么验证「相对路径改造」的）。
+
+---
+
 ## PWA 与离线
 
 站点带 `manifest.webmanifest` + `sw.js`，在安全上下文（`http://127.0.0.1:4173` 或
