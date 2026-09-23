@@ -1,0 +1,17 @@
+# 走查截图与浏览器临时 profile
+.shots/
+debug.log
+node_modules/
+
+# 品牌图标的候选原图（2K PNG，一张 3~5 MB，只有挑中的那张会进 assets/brand/）
+assets/brand/raw/
+
+# 改动前的整包备份（含 78 张卡面原图，约 50 MB）
+.backup/
+
+# 发布构建产物（由 tools/build-dist.mjs 生成，GitHub Actions 也会现做一份）
+dist/
+
+# Python 构建脚本的字节码缓存
+__pycache__/
+*.pyc

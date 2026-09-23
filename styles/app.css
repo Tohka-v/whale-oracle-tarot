@@ -1,0 +1,587 @@
+/* ===========================================================
+   app.css · 抽牌台 / 解读区 / 响应式
+   =========================================================== */
+
+/* ─── 抽牌台 ─── */
+.table-head {
+  max-width: 1180px;
+  margin: 0 auto;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 22px;
+  flex-wrap: wrap;
+  padding-top: clamp(4px, 1.6vh, 20px);
+}
+.table-head__left { max-width: 640px; }
+.table-head__right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.progress {
+  width: clamp(110px, 20vw, 220px);
+  height: 6px;
+  border-radius: 99px;
+  background: rgba(140, 165, 255, 0.14);
+  overflow: hidden;
+  border: 1px solid var(--line);
+}
+.progress__bar {
+  height: 100%;
+  width: 0;
+  border-radius: 99px;
+  background: linear-gradient(90deg, var(--whale-500), var(--gold-400));
+  box-shadow: 0 0 14px rgba(232, 201, 138, 0.6);
+  transition: width var(--dur-m) var(--ease-out);
+}
+.progress__label {
+  font-size: 13px;
+  color: var(--gold-300);
+  letter-spacing: 0.12em;
+  min-width: 54px;
+  text-align: center;
+}
+
+.table-stage {
+  position: relative;
+  max-width: 1280px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.deck-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin-top: 4px;
+}
+/* 牌库整体缩到 0.74。用 width/height 而不是 transform:scale——
+   洗牌动画 `.deck-pump` 本身就是一条 transform 动画，会把这里的 scale
+   整个替换掉，于是牌库在洗牌开始的瞬间跳大一圈、结束再跳回来。 */
+.deck-area .deck {
+  width: calc(var(--card-w) * 0.74);
+  height: calc(var(--card-h) * 0.74);
+}
+.deck-area { height: calc(var(--card-h) * 0.74 + 34px); }
+.deck-caption {
+  font-size: 11px;
+  letter-spacing: 0.26em;
+  color: var(--text-400);
+  text-transform: uppercase;
+  /* 这里原本有 margin-top:-14px 去抵消牌库的旧布局尺寸（.deck 曾用
+     transform:scale(0.74)，布局高度仍是未缩放的 208px）。现在 .deck 的
+     缩放做在 width/height 上，布局高度就是视觉高度，负 margin 反而把
+     文字拉进牌库里 4px。 */
+}
+
+.fan-caption {
+  margin: 6px 0 10px;
+  font-size: 13px;
+  letter-spacing: 0.14em;
+  color: var(--gold-300);
+  text-align: center;
+  min-height: 20px;
+}
+
+.table-foot {
+  max-width: 1280px;
+  margin: 16px auto 0;
+  display: flex;
+  gap: 18px;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+.spread-slots {
+  display: flex;
+  gap: 10px;
+  flex: 1 1 420px;
+  overflow-x: auto;
+  padding: 4px 2px 8px;
+  scrollbar-width: thin;
+}
+.slot-mini {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: rgba(10, 15, 34, 0.6);
+  font-size: 12.5px;
+  color: var(--text-300);
+  white-space: nowrap;
+  flex: 0 0 auto;
+  transition: border-color var(--dur-s), color var(--dur-s), background var(--dur-s);
+}
+.slot-mini__idx {
+  width: 20px; height: 20px;
+  display: grid; place-items: center;
+  border-radius: 50%;
+  font-size: 11px;
+  background: rgba(140, 165, 255, 0.16);
+  color: var(--text-200);
+}
+.slot-mini.is-filled { border-color: rgba(232, 201, 138, 0.42); color: var(--gold-300); }
+.slot-mini.is-filled .slot-mini__idx { background: rgba(232, 201, 138, 0.22); color: var(--gold-300); }
+.table-foot__actions { display: flex; gap: 12px; align-items: center; flex: 0 0 auto; }
+
+/* ─── 解读区 ─── */
+.screen--reading { max-width: 1440px; margin: 0 auto; }
+.reading-head { text-align: center; padding-top: clamp(6px, 2vh, 28px); }
+.reading-head .lede { margin: 10px auto 0; }
+
+.reading-layout {
+  display: grid;
+  gap: 30px 26px;
+  justify-content: center;
+  align-items: start;
+  margin-top: 44px;
+}
+/* 列数完全由 CSS 决定（JS 只负责桌面端的 grid-column / grid-row 坐标），
+   这样不会出现内联样式压住媒体查询的问题 */
+.reading-layout,
+.reading-layout[data-cols="1"] { grid-template-columns: repeat(1, auto); }
+.reading-layout[data-cols="3"] { grid-template-columns: repeat(3, auto); }
+.reading-layout[data-cols="4"] { grid-template-columns: repeat(4, auto); }
+
+.reading-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  max-width: 100%;
+  animation: rise-in 0.7s var(--ease-out) both;
+}
+@keyframes rise-in {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: none; }
+}
+
+.reading-card__pos {
+  font-size: 12px;
+  letter-spacing: 0.3em;
+  color: var(--gold-500);
+}
+.reading-card__name {
+  font-family: var(--font-serif);
+  font-size: 14.5px;
+  color: var(--text-100);
+  text-align: center;
+}
+.reading-card__name em {
+  font-style: normal;
+  font-size: 11px;
+  color: var(--text-400);
+  margin-left: 6px;
+}
+.reading-card__name em.is-rev { color: var(--bad); }
+
+.reading-card__toggle {
+  margin-top: 2px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: rgba(10, 15, 34, 0.66);
+  color: var(--text-300);
+  font-size: 12px;
+  transition: border-color var(--dur-s), color var(--dur-s);
+}
+.reading-card__toggle:hover { border-color: rgba(232, 201, 138, 0.5); color: var(--gold-300); }
+
+/* 解读正文面板 */
+.reading-summary {
+  margin-top: 54px;
+  padding: clamp(20px, 3vw, 34px);
+  border-radius: var(--radius-l);
+  border: 1px solid var(--line);
+  background:
+    radial-gradient(110% 120% at 100% 0%, rgba(77, 107, 254, 0.16), transparent 60%),
+    linear-gradient(168deg, rgba(16, 22, 48, 0.86), rgba(7, 10, 24, 0.92));
+  box-shadow: var(--shadow-1);
+  display: grid;
+  gap: 26px;
+  grid-template-columns: 1.35fr 0.9fr;
+}
+@media (max-width: 900px) { .reading-summary { grid-template-columns: 1fr; } }
+
+.summary-block h3 {
+  font-size: 13px;
+  letter-spacing: 0.28em;
+  color: var(--gold-400);
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+.summary-block p { color: var(--text-200); font-size: 15px; line-height: 1.9; }
+.summary-block p + p { margin-top: 12px; }
+.summary-block ul { margin: 0; padding-left: 0; list-style: none; display: grid; gap: 12px; }
+.summary-block li {
+  position: relative;
+  padding-left: 22px;
+  color: var(--text-200);
+  font-size: 14.5px;
+  line-height: 1.8;
+}
+.summary-block li::before {
+  content: "✦";
+  position: absolute;
+  left: 0;
+  color: var(--gold-400);
+  font-size: 12px;
+}
+
+.key-cards { display: flex; flex-wrap: wrap; gap: 10px; }
+.key-card {
+  padding: 10px 14px;
+  border-radius: var(--radius-s);
+  border: 1px solid var(--line);
+  background: rgba(8, 12, 28, 0.7);
+  font-size: 13px;
+  color: var(--text-200);
+}
+.key-card b { color: var(--gold-300); font-family: var(--font-serif); }
+.key-card span { color: var(--text-400); font-size: 11.5px; }
+
+.stat-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 4px; }
+.stat {
+  flex: 1 1 92px;
+  padding: 12px 14px;
+  border-radius: var(--radius-s);
+  border: 1px solid var(--line);
+  background: rgba(8, 12, 28, 0.6);
+  text-align: center;
+}
+.stat b { display: block; font-family: var(--font-serif); font-size: 24px; color: var(--gold-300); }
+.stat span { font-size: 11.5px; color: var(--text-400); letter-spacing: 0.14em; }
+
+.reading-foot {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 40px;
+}
+
+.disclaimer {
+  margin: 26px auto 0;
+  max-width: 780px;
+  text-align: center;
+  font-size: 12.5px;
+  color: var(--text-400);
+  line-height: 1.85;
+}
+
+/* ─── 详情浮层里的小牌 ─── */
+.modal__card { display: flex; flex-direction: column; gap: 14px; align-items: center; }
+.modal__card .mini-card { width: 100%; max-width: 260px; height: auto; aspect-ratio: 300 / 520; }
+
+/* ─── 卡面图鉴 ─── */
+.modal__panel--gallery {
+  grid-template-columns: 1fr;
+  width: min(1180px, 100%);
+  max-height: 90vh;
+  display: block;
+  padding: 24px clamp(14px, 2.4vw, 28px) 28px;
+}
+.gallery__lede { color: var(--text-400); font-size: 13px; margin-top: 6px; }
+
+.gallery__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin: 18px 0 14px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--line);
+}
+.gallery__filters { display: flex; gap: 8px; flex-wrap: wrap; }
+.gallery__filter {
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: rgba(10, 14, 32, 0.66);
+  color: var(--text-300);
+  font-size: 12.5px;
+  letter-spacing: 0.06em;
+  transition: border-color var(--dur-s), color var(--dur-s), background var(--dur-s);
+}
+.gallery__filter:hover { border-color: var(--line-strong); color: #fff; }
+.gallery__filter[aria-pressed="true"] {
+  border-color: rgba(232, 201, 138, 0.6);
+  color: var(--gold-300);
+  background: rgba(58, 44, 12, 0.36);
+}
+.gallery__tools { display: flex; align-items: center; gap: 12px; }
+.gallery__count { font-size: 12px; color: var(--text-400); letter-spacing: 0.1em; }
+#galleryFlip[aria-pressed="true"] { color: var(--gold-300); border-color: rgba(232, 201, 138, 0.5); }
+
+.gallery__section-title {
+  grid-column: 1 / -1;
+  font-size: 12px;
+  letter-spacing: 0.34em;
+  color: var(--gold-500);
+  margin: 18px 0 2px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.gallery__section-title::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(232, 201, 138, 0.4), transparent);
+}
+
+.gallery__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(108px, 1fr));
+  gap: 18px 12px;
+  margin-top: 6px;
+  padding-bottom: 8px;
+}
+.gallery__item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+.gallery__item .card {
+  --card-w: 108px;
+  --card-h: 187px;
+  transition: transform var(--dur-m) var(--ease-out), filter var(--dur-m);
+}
+.gallery__item:hover .card { transform: translateY(-6px) scale(1.04); }
+.gallery__item .card__face {
+  box-shadow: 0 8px 20px rgba(2, 4, 14, 0.55), 0 0 0 1px rgba(232, 201, 138, 0.2);
+}
+.gallery__name {
+  font-family: 'Cinzel', 'Noto Serif SC', Georgia, serif;
+  font-size: 10.5px;
+  letter-spacing: 0.03em;
+  color: var(--text-300);
+  text-align: center;
+  line-height: 1.25;
+  max-width: 116px;
+}
+.gallery__cn { font-size: 10.5px; color: var(--text-400); }
+
+/* 单张放大 */
+.modal--zoom { z-index: 110; }
+.modal__zoom {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(220px, 320px);
+  gap: 28px;
+  align-items: center;
+  padding: 26px;
+  border-radius: var(--radius-l);
+  border: 1px solid rgba(190, 205, 255, 0.24);
+  background:
+    radial-gradient(120% 120% at 0% 0%, rgba(77, 107, 254, 0.2), transparent 58%),
+    linear-gradient(168deg, #101736, #070a18 70%);
+  box-shadow: var(--shadow-2);
+  animation: modal-in var(--dur-m) var(--ease-out) both;
+  max-height: 92vh;
+}
+@media (max-width: 720px) {
+  .modal__zoom { grid-template-columns: 1fr; gap: 18px; padding: 18px; }
+  .modal__zoom-art .card { --card-w: 180px; --card-h: 312px; }
+}
+.modal__zoom-art .card { --card-w: 280px; --card-h: 485px; cursor: default; }
+.modal__zoom-art .card__face { box-shadow: 0 22px 50px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(232, 201, 138, 0.28); }
+.gallery__nav { display: flex; gap: 10px; margin-top: 20px; }
+
+/* ─── 响应式 ─── */
+
+/* 抽牌台在「够宽也不矮」的视口上换用略小的牌（约 120px 宽）：候选牌两行
+   就能放下，一屏看全，不必为了看最后一排而滚动——「凭直觉点选」最忌讳
+   看不全。窄屏或矮屏本来就得滚动，保持默认尺寸，免得牌小到看不清徽记。
+   --card-h 必须跟着一起重定义：var() 替换在定义处就完成了，只改 --card-w
+   的话高度不会变，会得到 120×260 这种畸形比例。 */
+@media (min-width: 900px) and (min-height: 760px) {
+  .screen--table {
+    --card-w: calc(var(--card-w-base) * 0.8);
+    --card-h: calc(var(--card-w) * 520 / 300);
+  }
+}
+
+@media (max-width: 1180px) {
+  .reading-layout { gap: 26px 16px; }
+}
+
+@media (max-width: 900px) {
+  :root { --card-w-base: 128px; }
+  .reading-layout,
+  .reading-layout[data-cols="1"],
+  .reading-layout[data-cols="3"],
+  .reading-layout[data-cols="4"] { grid-template-columns: repeat(3, auto); }
+}
+
+/* 移动端：列数只由 CSS 决定，元素按抽牌顺序自然排列，
+   避免桌面坐标在窄屏产生隐含轨道与错位。
+   列数由 JS 按张数写进 --reading-cols（3 张一行看全、5 张 3 列、7 张 4 列），
+   列宽用 1fr 铺满可用宽度——早先三档媒体查询把列宽写死成 116/104/94px，
+   390px 手机上 3 张牌被排成 2+1 两行、左右各空 100px，牌又小又费一整行高度。 */
+@media (max-width: 820px) {
+  .reading-layout,
+  .reading-layout[data-cols="1"],
+  .reading-layout[data-cols="3"],
+  .reading-layout[data-cols="4"] {
+    grid-template-columns: repeat(var(--reading-cols, 3), minmax(0, 1fr));
+    gap: 22px 12px;
+  }
+  /* 牌宽交给网格单元、高度按 300:520 自己长。
+     这里不能用 --card-w / --card-h 那对 px 令牌：它们是一组固定值，
+     宽度改了高度不跟着变，会得到畸形比例（和牌桌那次踩的是同一个坑）。 */
+  .reading-card .card {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 300 / 520;
+  }
+  /* 单牌阵：一张牌铺满整行会变成 400×690，太高；收窄并居中 */
+  .reading-layout[data-count="1"] .reading-card { max-width: 232px; justify-self: center; }
+  .reading-card { max-width: 100%; gap: 10px; }
+  .reading-card__name { font-size: 15px; }
+  .reading-card__name em { font-size: 12.5px; margin-left: 5px; }
+  .reading-card__pos { font-size: 12px; letter-spacing: 0.16em; }
+  .reading-card__toggle { padding: 9px 16px; font-size: 13.5px; min-height: 40px; }
+}
+
+@media (max-width: 680px) {
+  :root { --card-w-base: 112px; }
+  #app { padding-bottom: calc(140px + env(safe-area-inset-bottom, 0px)); }
+  .table-head__right { width: 100%; justify-content: space-between; }
+  /* 移动端横向溢出的根因（实测 375px 视口下多出 425px 滚动）：
+     .table-foot 是 flex-wrap:wrap 的容器。改成 column 方向后，交叉轴成了水平，
+     align-items:stretch 依据的是 **flex line 的 cross size**——而这条 line 会被
+     最宽项（7 个牌位胶囊的 .spread-slots）撑到 770px，stretch 于是把它固化在
+     770px，容器和整页都被顶宽。只加 stretch 不够，必须给显式宽度。 */
+  .table-foot { flex-direction: column-reverse; align-items: stretch; }
+  .spread-slots { flex-basis: 100%; width: 100%; min-width: 0; }
+  .table-foot__actions { width: 100%; justify-content: space-between; }
+  .brand__text i { display: none; }
+  .reading-summary { padding: 18px; margin-top: 34px; }
+  /* 四颗按钮排成 2×2：等宽之后「复制分享链接」这类长文案不会再被压到换行，
+     拇指也更容易命中（原先是 flex-wrap，第二行两颗各自 150/210px 宽）。 */
+  .reading-foot {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 30px;
+  }
+  .reading-foot .btn { width: 100%; padding: 13px 10px; font-size: 13.5px; }
+  .cat__name { font-size: 20px; }
+  .reveal-caption {
+    width: max(210px, calc(var(--card-w) * 2.4));
+    bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+  }
+  /* 图鉴：卡片跟随网格宽度，不再固定 108px 留出大片空白；
+     牌名原本 9px / 10.5px，手机上基本读不出来 */
+  .gallery__grid { grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 16px 10px; }
+  .gallery__item .card { width: 100%; height: auto; aspect-ratio: 300 / 520; }
+  .gallery__name { max-width: 100%; }
+  .gallery__cn { font-size: 12px; }
+  .gallery__bar { gap: 10px; }
+  .gallery__filter { padding: 8px 14px; font-size: 13px; min-height: 40px; }
+  .modal__panel--gallery { padding: 20px 14px 22px; }
+}
+
+@media (max-width: 420px) {
+  :root { --card-w-base: 100px; }
+  .cat-grid { grid-template-columns: 1fr; }
+}
+
+/* 更窄的屏上按钮只留图标：品牌和三个按钮挤在一行时，
+   「牌面」「音效」「规则」会被压成竖排的两个字，反而更难读。
+   按钮本身带 title，长按也有系统提示。 */
+@media (max-width: 480px) {
+  .icon-btn__label { display: none; }
+  /* 只留图标之后更要把命中区撑到 44px：原先 38×42，拇指很难点准 */
+  .icon-btn { padding: 0; width: 44px; height: 44px; justify-content: center; }
+  .icon-btn__glyph { font-size: 17px; }
+  .topbar { gap: 10px; }
+}
+
+/* 详情浮层里的「上一张 / 下一张」 */
+.detail__nav {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+.detail__nav-count {
+  font-size: 12px;
+  letter-spacing: 0.16em;
+  color: var(--text-400);
+  min-width: 48px;
+  text-align: center;
+}
+
+/* ─── 触屏尺寸：字号与命中区 ───
+   这两块必须留在最后一张样式表里。媒体查询不加优先级，同优先级的规则
+   按源码顺序决胜，而 .summary-block li / .disclaimer / .gallery__name /
+   .deck-caption 都定义在本文件中间——把覆盖写回 base.css 会被它们反压。
+
+   上界取 820px，与解读网格的窄屏断点一致：竖屏平板同样是手指在点，
+   11px 的胶囊标签、34px 的关闭键在那里一样不好用。 */
+@media (max-width: 820px) {
+  /* 命中区：WCAG 2.5.5 建议不低于 44px。实测原先浮层关闭键 34×34、
+     顶栏图标按钮 38×42。 */
+  .btn--sm { min-height: 40px; padding: 10px 16px; font-size: 13.5px; }
+  .modal__close { width: 44px; height: 44px; top: 10px; right: 10px; font-size: 15px; }
+
+  /* 小标签统一抬到 12px 以上，正文类到 15px */
+  .cat__en, .deck-caption, .slot-mini__idx { font-size: 12px; }
+  .cat__desc, .spread__desc { font-size: 13.5px; }
+  .spread__count { font-size: 12.5px; }
+  .spread__name { white-space: normal; }
+  .chip { font-size: 12px; padding: 4px 10px; }
+  .slot-mini { font-size: 13px; }
+  .slot-mini__idx { width: 22px; height: 22px; }
+  .summary-block li, .doc p, .doc li { font-size: 15px; }
+  .detail__meta { font-size: 13.5px; }
+  .disclaimer { font-size: 13px; }
+  .key-card span, .stat span, .brand__text i { font-size: 12px; }
+  .gallery__name { font-size: 12px; }
+}
+
+/* ─── 手机：页脚主按钮常驻 ───
+   选完方向或牌阵，主按钮就在拇指下，不必再滚到页底去找。页脚本身关掉命中
+   测试，只让半透明背板不挡住上面的输入框，真正可点的是里面那几颗按钮。
+   负边距用 --gutter 而不是写死 16px：多出 2px 就会把文档顶宽。 */
+@media (max-width: 680px) {
+  .screen__foot {
+    position: sticky;
+    bottom: 0;
+    z-index: 25;
+    gap: 10px;
+    margin: 26px calc(var(--gutter) * -1) 0;
+    padding: 14px var(--gutter) calc(14px + env(safe-area-inset-bottom, 0px));
+    background: linear-gradient(180deg, rgba(5, 7, 15, 0), rgba(5, 7, 15, 0.94) 46%);
+    backdrop-filter: blur(10px);
+    pointer-events: none;
+  }
+  .screen__foot .btn { pointer-events: auto; flex: 1 1 auto; }
+  /* 主按钮占更大分量，视线自然落在「往下走」那一颗 */
+  .screen__foot .btn--primary { flex-grow: 2; }
+  .btn { min-height: 44px; }
+  /* toast 要落在常驻页脚**之上**：页脚固定占掉底部约 72px（14+44+14），
+     留在 22px 处会和它叠在一起，两段文字互相盖住。 */
+  .toast {
+    bottom: calc(86px + env(safe-area-inset-bottom, 0px));
+    max-width: calc(100vw - 28px);
+    text-align: center;
+  }
+}

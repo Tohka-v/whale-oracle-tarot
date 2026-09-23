@@ -1,0 +1,79 @@
+/* ===========================================================
+   fonts.css · 本地内嵌思源宋体 / 思源黑体（OFL-1.1）
+   全部文件随站点一起分发，离线可用；不需要联网拉字体。
+
+   三个 CJK 字体都已子集化（*.subset.woff2）：只保留 index.html 与
+   src/**/*.js 里实际出现过的 1813 个字符（含 1650 个汉字），
+   合计 3.98 MB → 847 KB。原始全量字体仍留在 fonts/ 供重新子集化用。
+   新增中文文案后请重跑：python tools/make-font-subset.py
+   =========================================================== */
+
+/* 思源宋体 · 正文 */
+@font-face {
+  font-family: 'Noto Serif SC';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('../fonts/NotoSerifSC-400.subset.woff2') format('woff2');
+}
+/* 思源宋体 · 标题/强调 */
+@font-face {
+  font-family: 'Noto Serif SC';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('../fonts/NotoSerifSC-600.subset.woff2') format('woff2');
+}
+/* 思源黑体 · 界面与长正文（小字号更清楚） */
+@font-face {
+  font-family: 'Noto Sans SC';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('../fonts/NotoSansSC-400.subset.woff2') format('woff2');
+}
+
+/* ───────── 卡面用英文衬线（拉丁字母极小，随站点内嵌） ─────────
+   Cinzel：罗马碑刻体，用于牌名与序号，塔罗牌最常见的英文牌名气质
+   Cormorant Garamond：用于小字铭文与副标题 */
+@font-face {
+  font-family: 'Cinzel';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('../fonts/Cinzel-400.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Cinzel';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('../fonts/Cinzel-600.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Cinzel';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('../fonts/Cinzel-700.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Cormorant Garamond';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('../fonts/Cormorant-400.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Cormorant Garamond';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('../fonts/Cormorant-600.woff2') format('woff2');
+}
+
+:root {
+  /* 卡面专用英文衬线栈（SVG 内用具体字体名，不能依赖 CSS 变量） */
+  --font-tarot: 'Cinzel', 'Noto Serif SC', Georgia, 'Times New Roman', serif;
+  --font-inscription: 'Cormorant Garamond', 'Cinzel', Georgia, serif;
+}

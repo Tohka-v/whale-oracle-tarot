@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<title>开发自检 · 牌面总览</title>
+<style>
+  body { margin: 0; padding: 16px; background: #080b1a; color: #e8ecff; font-family: system-ui, "Microsoft YaHei", sans-serif; }
+  h2 { font-size: 15px; letter-spacing: .2em; color: #e8c98a; margin: 22px 0 10px; }
+  .row { display: flex; flex-wrap: wrap; gap: 8px; }
+  .cell { width: 132px; }
+  .cell svg { width: 132px; height: 229px; display: block; border-radius: 12px; }
+  .cell b { display: block; font-size: 11px; color: #98a2c8; margin-top: 3px; text-align: center; font-weight: 400; }
+  .big svg { width: 300px; height: 520px; }
+  .big .cell { width: 300px; }
+</style>
+</head>
+<body>
+  <h2>牌背（鲸鱼娘徽记）</h2>
+  <div class="row big" id="backs"></div>
+  <h2>大阿卡纳 22 张</h2>
+  <div class="row" id="majors"></div>
+  <h2>小阿卡纳（每个花色取 1 / 5 / 10 / 国王）</h2>
+  <div class="row" id="minors"></div>
+  <h2 id="errTitle" style="color:#f07a8a"></h2>
+  <pre id="err" style="color:#f07a8a;white-space:pre-wrap"></pre>
+
+<script type="module">
+import { DECK } from '../src/data/deck.js';
+import { renderCardFront } from '../src/art/card-art.js';
+import { mountCardDefs, whaleSigil, brandMark } from '../src/art/whale-back.js';
+import { createCard } from '../src/core/ui.js';
+
+mountCardDefs();
+
+const put = (host, card, label) => {
+  const d = document.createElement('div');
+  d.className = 'cell';
+  d.innerHTML = renderCardFront(card);
+  const b = document.createElement('b');
+  b.textContent = label || card.name;
+  d.appendChild(b);
+  host.appendChild(d);
+};
+
+try {
+  const backs = document.getElementById('backs');
+
+  /* 牌背：用共享 symbol 渲染的真实卡牌（与站内一致） */
+  const b1 = document.createElement('div');
+  b1.className = 'cell';
+  b1.appendChild(createCard(null));
+  const l1 = document.createElement('b'); l1.textContent = '牌背 · 鲸尾徽记';
+  b1.appendChild(l1);
+  backs.appendChild(b1);
+
+  /* 鲸鱼娘徽记（放大） */
+  const b2 = document.createElement('div');
+  b2.className = 'cell';
+  b2.innerHTML = whaleSigil(260);
+  const l2 = document.createElement('b'); l2.textContent = '鲸鱼娘徽记（放大）';
+  b2.appendChild(l2);
+  backs.appendChild(b2);
+
+  /* 品牌标记 */
+  const b3 = document.createElement('div');
+  b3.className = 'cell';
+  b3.innerHTML = brandMark();
+  const l3 = document.createElement('b'); l3.textContent = '品牌标记';
+  b3.appendChild(l3);
+  backs.appendChild(b3);
+
+  const majors = document.getElementById('majors');
+  DECK.filter((c) => c.arcana === 'major').forEach((c) => put(majors, c));
+
+  const minors = document.getElementById('minors');
+  for (const suit of ['wands', 'cups', 'swords', 'pentacles']) {
+    for (const id of [`${suit}-01`, `${suit}-05`, `${suit}-10`, `${suit}-king`]) {
+      const c = DECK.find((x) => x.id === id);
+      if (c) put(minors, c);
+    }
+  }
+  document.title = 'OK · ' + DECK.length;
+} catch (e) {
+  document.getElementById('errTitle').textContent = '渲染出错：';
+  document.getElementById('err').textContent = (e && e.stack) || String(e);
+  document.title = 'ERR';
+}
+</script>
+</body>
+</html>

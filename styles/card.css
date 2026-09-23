@@ -1,0 +1,298 @@
+/* ===========================================================
+   card.css · 卡牌 3D 翻转 / 牌背 / 扇形牌堆
+   =========================================================== */
+
+.card {
+  position: relative;
+  width: var(--card-w);
+  height: var(--card-h);
+  perspective: 1100px;
+  perspective-origin: 50% 45%;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.card__inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 0.86s cubic-bezier(0.3, 1.32, 0.42, 1);
+  will-change: transform;
+}
+
+.card.is-flipped .card__inner { transform: rotateY(180deg); }
+
+.card__face {
+  position: absolute;
+  inset: 0;
+  border-radius: 14px;
+  overflow: hidden;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.14) inset,
+    0 16px 34px rgba(2, 4, 14, 0.62);
+  background: #070a18;
+}
+
+.card__face--back { transform: rotateY(0deg); }
+.card__face--front { transform: rotateY(180deg); }
+
+.card__face svg.card-art {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* 逆位：翻牌完成后把画面倒过来 */
+.card.is-reversed .card__face--front .card-art {
+  transform: rotate(180deg);
+  transition: transform 0.7s var(--ease-out);
+}
+
+/* 牌面高光/暗角 */
+.card__face::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background:
+    radial-gradient(120% 80% at 20% -10%, rgba(255, 255, 255, 0.18), transparent 55%),
+    radial-gradient(120% 90% at 100% 110%, rgba(0, 0, 0, 0.4), transparent 60%);
+  mix-blend-mode: soft-light;
+}
+
+/* 牌背微光呼吸 */
+.card__face--back::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(115deg, transparent 34%, rgba(150, 190, 255, 0.16) 48%, transparent 62%);
+  background-size: 260% 100%;
+  animation: back-sheen 6.5s ease-in-out infinite;
+}
+@keyframes back-sheen {
+  0%, 100% { background-position: 130% 0; }
+  55% { background-position: -30% 0; }
+}
+
+/* 只含牌背的轻量卡牌（洗牌 / 发牌动画用），没有正面，故无需 3D */
+.card--back-only .card__face--front { display: none; }
+.card--back-only .card__inner { transform: none; }
+
+/* 悬停：抬起 + 金光 */
+.card.is-hoverable:hover { transform: translateY(-14px) scale(1.03); }
+.card.is-hoverable:hover .card__face {
+  box-shadow: 0 0 0 1px rgba(232, 201, 138, 0.5), 0 26px 54px rgba(2, 4, 14, 0.7), 0 0 40px rgba(232, 201, 138, 0.22);
+}
+.card {
+  transition: transform 0.34s var(--ease-out), opacity 0.3s ease;
+}
+/* 注：这里曾有一组 `.fan .card { transform: translateX(-half-w) … }`，
+   属于重叠扇形时代的遗留（当前扇形是等距平铺网格 `.fan-grid`）。
+   它一直被下面的 deal-in 动画填充值压住而没生效，一旦动画不再填充，
+   就会让整个牌阵平移半张牌宽。已随动画修复一并删除。 */
+
+/* ─── 桌面中央的牌库 ─── */
+.deck {
+  position: relative;
+  width: var(--card-w);
+  height: var(--card-h);
+  margin: 0 auto;
+  transform-style: preserve-3d;
+}
+.deck__layer {
+  position: absolute;
+  inset: 0;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 10px 24px rgba(2, 4, 14, 0.6);
+}
+/* 牌库最顶上那张本身就是 .card.deck__layer。.card 自带
+   width/height: var(--card-w/h)，而绝对定位元素同时有 width 和 inset:0 时
+   width 胜出——于是它不跟随 .deck 的 0.74 缩放，比牌库大出一整圈
+   （实测 120×208 vs 88.8×154），底部会压住下面的说明文字。 */
+.card.deck__layer { width: 100%; height: 100%; }
+.deck__layer svg { display: block; width: 100%; height: 100%; }
+.deck__glow {
+  position: absolute;
+  left: 50%;
+  bottom: -18px;
+  width: 160%;
+  height: 40px;
+  transform: translateX(-50%);
+  background: radial-gradient(ellipse at center, rgba(77, 107, 254, 0.5), transparent 70%);
+  filter: blur(12px);
+  pointer-events: none;
+}
+
+/* 洗牌时牌库的挤压动作 */
+.deck.is-shuffling { animation: deck-pump 0.52s var(--ease-in-out) infinite; }
+@keyframes deck-pump {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-8px) scale(1.03); }
+}
+
+/* ─── 待选区：等距平铺网格 ───
+   刻意不用重叠扇形：重叠布局里指针停在两牌交界处会不断在
+   「抬起 → 盖住 → 换人」之间循环，表现为抽搐。
+   平铺后每张牌热区独立，根本不会争抢。 */
+.fan {
+  position: relative;
+  width: 100%;
+  margin: 10px auto 0;
+  display: flex;
+  justify-content: center;
+}
+/* 必须显式 width:100%：作为 flex 子项时会被收缩成内容宽度，
+   导致 auto-fit 算不出多列而塌成单列 */
+.fan-grid {
+  width: 100%;
+  display: grid;
+  /* 列数由 JS 写进 --fan-cols，而不是交给 auto-fit 自己算：
+     张数必须是列数的整数倍，否则最后一行排不满、右侧空一块，看着像牌没铺好；
+     而只要 JS 与 CSS 各算一次列数，迟早会因为可用宽度口径不同而对不上。 */
+  grid-template-columns: repeat(var(--fan-cols, 7), var(--card-w));
+  grid-auto-rows: auto;
+  justify-content: center;
+  justify-items: center;
+  align-content: start;
+  gap: 14px 12px;
+  padding: 6px 2px;
+}
+.fan-grid .card {
+  position: relative;
+  cursor: pointer;
+  /* fill 必须是 backwards 而不是 both：both/forwards 会让 deal-in 的
+     `to { transform: none }` 在动画结束后继续以动画优先级压住所有
+     transform 声明，导致悬停抬起（:hover translateY）和抽中抬起
+     （.is-picked.is-revealing）全部失效。backwards 只在延迟期间填充，
+     播完即把 transform 交还给普通层叠。 */
+  animation: deal-in 0.42s var(--ease-out) backwards;
+}
+@keyframes deal-in {
+  from { opacity: 0; transform: translateY(12px) scale(0.96); }
+  to { opacity: 1; transform: none; }
+}
+.fan-grid .card.is-hoverable:hover { transform: translateY(-8px); z-index: 30; }
+.fan-grid .card.is-hoverable:hover .card__face {
+  box-shadow: 0 0 0 1px rgba(232, 201, 138, 0.55), 0 22px 44px rgba(2, 4, 14, 0.7), 0 0 34px rgba(232, 201, 138, 0.2);
+}
+.fan-grid .card.is-picked.is-revealing { transform: translateY(-8px); z-index: 40; }
+.fan-grid .card.is-picked:not(.is-revealing) {
+  opacity: 0.26;
+  filter: brightness(0.5) saturate(0.35);
+  pointer-events: none;
+}
+
+/* 翻开后的解读浮层：固定定位在视口内，
+   避免被网格单元裁剪，也保证任何一行的牌都能看清 */
+.reveal-caption {
+  position: fixed;
+  left: 50%;
+  bottom: 34px;
+  width: min(560px, calc(100vw - 32px));
+  transform: translateX(-50%);
+  padding: 18px 22px;
+  border-radius: 16px;
+  border: 1px solid rgba(232, 201, 138, 0.42);
+  background:
+    radial-gradient(120% 120% at 50% 0%, rgba(77, 107, 254, 0.22), transparent 62%),
+    linear-gradient(170deg, rgba(14, 19, 42, 0.97), rgba(6, 9, 22, 0.98));
+  box-shadow: 0 22px 54px rgba(0, 0, 0, 0.66);
+  text-align: center;
+  pointer-events: none;
+  z-index: 220;
+  animation: caption-in 0.34s var(--ease-out) both;
+}
+.reveal-caption.is-out { animation: caption-out 0.3s ease-in both; }
+@keyframes caption-in {
+  from { opacity: 0; transform: translate(-50%, 14px) scale(0.97); }
+  to { opacity: 1; transform: translate(-50%, 0) scale(1); }
+}
+@keyframes caption-out {
+  from { opacity: 1; }
+  to { opacity: 0; transform: translate(-50%, 8px); }
+}
+.reveal-caption__pos {
+  display: block;
+  font-size: 11.5px;
+  letter-spacing: 0.26em;
+  color: var(--gold-500);
+  text-transform: uppercase;
+}
+.reveal-caption b {
+  display: block;
+  margin-top: 6px;
+  font-family: var(--font-serif);
+  font-size: 23px;
+  letter-spacing: 0.08em;
+}
+.reveal-caption b i {
+  font-style: normal;
+  font-size: 12px;
+  letter-spacing: 0.16em;
+  color: var(--gold-300);
+  margin-left: 10px;
+}
+.reveal-caption b i.is-rev { color: var(--bad); }
+.reveal-caption p {
+  margin: 11px 0 0;
+  font-size: 14.5px;
+  line-height: 1.85;
+  color: var(--text-200);
+}
+.reveal-caption__keys {
+  display: block;
+  margin-top: 11px;
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  color: var(--text-400);
+}
+/* 「继续 →」：浮层整体是 pointer-events:none（免得挡住下面的牌），
+   只有这个按钮单独打开命中测试 */
+.reveal-caption__next {
+  pointer-events: auto;
+  display: inline-block;
+  margin-top: 14px;
+  padding: 7px 20px;
+  border-radius: 999px;
+  border: 1px solid rgba(232, 201, 138, 0.42);
+  background: rgba(10, 14, 32, 0.78);
+  color: var(--gold-300);
+  font-size: 12.5px;
+  letter-spacing: 0.1em;
+  transition: border-color var(--dur-s), color var(--dur-s), background var(--dur-s);
+}
+.reveal-caption__next:hover {
+  border-color: rgba(232, 201, 138, 0.85);
+  color: #fff;
+  background: rgba(58, 44, 12, 0.5);
+}
+
+/* 飞行中的牌（脱离文档流，由 JS 用 transform 驱动） */
+.flyer {
+  position: fixed;
+  z-index: 200;
+  pointer-events: none;
+  perspective: 1100px;
+  transition-property: transform;
+  transition-timing-function: cubic-bezier(0.22, 0.85, 0.24, 1);
+}
+
+/* 掌心/角落的小牌（解读面板里用） */
+.mini-card {
+  width: 92px;
+  height: 154px;
+  border-radius: 10px;
+  overflow: hidden;
+  position: relative;
+  box-shadow: 0 12px 26px rgba(2, 4, 14, 0.6), 0 0 0 1px rgba(232, 201, 138, 0.22);
+}
+.mini-card svg { display: block; width: 100%; height: 100%; }
+.mini-card.is-reversed svg { transform: rotate(180deg); }

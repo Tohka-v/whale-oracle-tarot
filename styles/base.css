@@ -1,0 +1,610 @@
+/* ===========================================================
+   星海鲸语 · 基础层：设计令牌 / 背景 / 通用组件
+   =========================================================== */
+
+:root {
+  /* 夜色 */
+  --ink-900: #05070f;
+  --ink-800: #080b1a;
+  --ink-700: #0d1226;
+  --ink-600: #131a35;
+  --ink-500: #1c2447;
+  --ink-400: #2a3463;
+
+  /* 鲸蓝（DeepSeek 系） */
+  --whale-400: #6b86ff;
+  --whale-500: #4d6bfe;
+  --whale-600: #3450d9;
+  --whale-700: #22307f;
+
+  /* 星金 */
+  --gold-300: #f6e6bb;
+  --gold-400: #e8c98a;
+  --gold-500: #cfa859;
+  --gold-600: #9c7a34;
+
+  /* 星紫 / 星青 */
+  --violet-400: #a98bff;
+  --violet-600: #5b3fa8;
+  --teal-300: #8ff0e6;
+  --teal-500: #35b9ae;
+
+  /* 语义 */
+  --text-100: #f2f5ff;
+  --text-200: #cfd6f2;
+  --text-300: #98a2c8;
+  --text-400: #6f7aa3;
+  --line: rgba(160, 180, 255, 0.16);
+  --line-strong: rgba(190, 205, 255, 0.32);
+
+  --ok: #57d6a3;
+  --warn: #f0b95c;
+  --bad: #f07a8a;
+
+  --radius-s: 10px;
+  --radius-m: 16px;
+  --radius-l: 26px;
+
+  /* 页面左右留白。抽出来是因为常驻页脚要用它做等宽负边距去「出血」到
+     屏幕边缘——写死 -16px 会比实际内边距多出 2px，把文档顶宽。 */
+  --gutter: clamp(14px, 4vw, 46px);
+
+  --shadow-1: 0 10px 30px rgba(0, 0, 0, 0.45);
+  --shadow-2: 0 26px 70px rgba(0, 0, 0, 0.6);
+
+  /* 正文用思源黑体，小字号下比宋体更清楚；标题用思源宋体 */
+  --font-serif: 'Noto Serif SC', "Source Han Serif SC", "Songti SC", "STSong", SimSun, Georgia, serif;
+  --font-sans: 'Noto Sans SC', "PingFang SC", "Microsoft YaHei", system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-s: 0.22s;
+  --dur-m: 0.45s;
+  --dur-l: 0.9s;
+
+  /* 卡面尺寸：桌面 / 平板 / 手机三档，尽量给足可读性。
+     --card-w-base 是各断点唯一需要覆盖的量，--card-w 与 --card-h 都由它派生。
+
+     注意自定义属性的求值时机：var() 替换是在**定义它的那个元素**上完成的，
+     继承给后代的已经是算好的值。所以在后代（例如 .screen--table）上覆盖
+     --card-w 时，必须把 --card-h 也重新定义一次，否则高度不会跟着变——
+     实测漏掉那行会得到 120×260 这种畸形比例。 */
+  --card-w-base: 150px;
+  --card-w: var(--card-w-base);
+  --card-h: calc(var(--card-w) * 520 / 300);
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+}
+
+/* 关掉 iOS 的字体自动放大：它会把整段文字按容器宽度重新定字号，
+   量出来的行高与我们写的对不上，中文长段落尤其容易被撑破行。 */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  background: var(--ink-900);
+  color: var(--text-100);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+  min-height: 100vh;
+}
+
+body.is-locked { overflow: hidden; }
+
+h1, h2, h3, h4 { font-family: var(--font-serif); font-weight: 600; margin: 0; letter-spacing: 0.02em; }
+p { margin: 0; }
+button { font: inherit; color: inherit; cursor: pointer; }
+input { font: inherit; }
+
+::selection { background: rgba(77, 107, 254, 0.42); }
+
+/* 连点两次就能进入下一步，所以必须先关掉浏览器的「双击缩放」：
+   默认手势识别会把第二次点按当成放大意图，页面先缩放一下再跳转，
+   中间还会带来约 300ms 的点击延迟。manipulation 只关双击缩放，双指捏合仍在。 */
+button, a, .card, .cat, .spread, label {
+  touch-action: manipulation;
+}
+
+/* ─── 背景：星空 / 星云 / 极光 / 网格 ─── */
+.sky {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  background:
+    radial-gradient(1200px 760px at 78% -10%, #1b2a6b 0%, transparent 62%),
+    radial-gradient(900px 640px at 8% 12%, #2a1c56 0%, transparent 60%),
+    radial-gradient(1100px 900px at 50% 118%, #123055 0%, transparent 66%),
+    linear-gradient(180deg, #05070f 0%, #080b1a 46%, #04060e 100%);
+}
+
+#stars { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+.nebula {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(70px);
+  opacity: 0.5;
+  mix-blend-mode: screen;
+  animation: drift 34s var(--ease-in-out) infinite alternate;
+}
+.nebula--a {
+  width: 46vw; height: 46vw; left: -10vw; top: -8vw;
+  background: radial-gradient(circle at 40% 40%, rgba(77, 107, 254, 0.55), transparent 68%);
+}
+.nebula--b {
+  width: 40vw; height: 40vw; right: -8vw; bottom: -12vw;
+  background: radial-gradient(circle at 60% 60%, rgba(139, 92, 246, 0.45), transparent 70%);
+  animation-delay: -12s;
+}
+
+.aurora {
+  position: absolute;
+  left: -20%;
+  top: 30%;
+  width: 140%;
+  height: 42vh;
+  background: linear-gradient(100deg, transparent 0%, rgba(53, 185, 174, 0.16) 30%, rgba(77, 107, 254, 0.2) 55%, transparent 85%);
+  filter: blur(48px);
+  transform: rotate(-7deg);
+  animation: aurora 22s ease-in-out infinite alternate;
+}
+
+.grid-veil {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(140, 165, 255, 0.055) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(140, 165, 255, 0.055) 1px, transparent 1px);
+  background-size: 78px 78px;
+  mask-image: radial-gradient(ellipse 80% 62% at 50% 42%, #000 22%, transparent 78%);
+  -webkit-mask-image: radial-gradient(ellipse 80% 62% at 50% 42%, #000 22%, transparent 78%);
+  opacity: 0.7;
+}
+
+@keyframes drift {
+  from { transform: translate3d(0, 0, 0) scale(1); }
+  to   { transform: translate3d(6vw, 4vh, 0) scale(1.16); }
+}
+@keyframes aurora {
+  from { transform: rotate(-7deg) translateY(-3vh); opacity: 0.75; }
+  to   { transform: rotate(-3deg) translateY(4vh); opacity: 1; }
+}
+
+/* ─── 顶栏 ─── */
+.topbar {
+  position: relative;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px clamp(16px, 4vw, 46px);
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  color: inherit;
+}
+/* 品牌标记：48×48 的圆形头像。
+   做成圆形而不是原来的 14px 圆角方形，是因为 Seedream 出的徽记本身就是
+   「金环 + 圆内构图」，圆形遮罩把四角那片空背景裁掉，脸能占满整个 48px；
+   圆角方形会把徽记缩在中间、四周留一圈深色，小尺寸下白白损失可读性。 */
+.brand__mark {
+  width: 48px; height: 48px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  overflow: hidden;
+  background: linear-gradient(160deg, rgba(77, 107, 254, 0.32), rgba(10, 14, 32, 0.9));
+  border: 1px solid rgba(160, 190, 255, 0.3);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16), 0 8px 24px rgba(38, 60, 160, 0.4);
+}
+.brand__mark svg { width: 30px; height: 30px; display: block; }
+/* 位图版品牌标记：满幅铺满，由容器的 border-radius 裁圆 */
+.brand__img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: inherit;
+}
+.brand__text { display: flex; flex-direction: column; line-height: 1.25; }
+.brand__text b { font-family: var(--font-serif); font-size: 19px; letter-spacing: 0.14em; }
+.brand__text i {
+  font-style: normal;
+  font-size: 10px;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--text-400);
+}
+
+.topbar__actions { display: flex; gap: 10px; }
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 14px;
+  border-radius: 999px;
+  background: rgba(12, 18, 40, 0.72);
+  border: 1px solid var(--line);
+  color: var(--text-200);
+  font-size: 13px;
+  backdrop-filter: blur(10px);
+  transition: border-color var(--dur-s), color var(--dur-s), transform var(--dur-s), background var(--dur-s);
+}
+.icon-btn:hover { border-color: var(--line-strong); color: #fff; transform: translateY(-1px); }
+.icon-btn[aria-pressed="true"] {
+  color: var(--gold-300);
+  border-color: rgba(232, 201, 138, 0.55);
+  background: rgba(58, 44, 12, 0.4);
+}
+.icon-btn__glyph { font-size: 15px; line-height: 1; }
+
+/* ─── 屏幕容器 ─── */
+#app {
+  position: relative;
+  z-index: 20;
+  padding: 0 var(--gutter) 150px;
+}
+
+.screen { animation: screen-in var(--dur-l) var(--ease-out) both; }
+.screen[hidden] { display: none; }
+
+@keyframes screen-in {
+  from { opacity: 0; transform: translateY(22px) scale(0.99); filter: blur(6px); }
+  to   { opacity: 1; transform: none; filter: none; }
+}
+
+.screen__inner {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding-top: clamp(10px, 3vh, 40px);
+}
+
+.kicker {
+  font-size: 12px;
+  letter-spacing: 0.42em;
+  text-transform: uppercase;
+  color: var(--gold-500);
+  margin-bottom: 10px;
+}
+
+.title {
+  font-size: clamp(27px, 4.4vw, 44px);
+  line-height: 1.26;
+  background: linear-gradient(96deg, #ffffff 6%, var(--gold-300) 44%, #cbd8ff 96%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.title--sm { font-size: clamp(21px, 2.8vw, 30px); }
+
+.lede {
+  margin-top: 12px;
+  color: var(--text-300);
+  max-width: 62ch;
+  font-size: 15px;
+}
+.lede--sm { font-size: 14px; }
+
+/* ─── 方向卡片 ─── */
+.cat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 14px;
+  margin-top: 30px;
+}
+
+.cat {
+  position: relative;
+  text-align: left;
+  padding: 22px 20px 20px 24px;
+  border-radius: var(--radius-m);
+  background:
+    radial-gradient(110% 130% at 12% 0%, rgba(77, 107, 254, 0.16), transparent 60%),
+    linear-gradient(168deg, rgba(20, 27, 56, 0.88), rgba(8, 11, 26, 0.92));
+  border: 1px solid var(--line);
+  overflow: hidden;
+  transition: transform var(--dur-m) var(--ease-out), border-color var(--dur-m), box-shadow var(--dur-m);
+}
+/* 用一条极细的金线替代原来的图标，克制且有仪式感 */
+.cat::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 22px;
+  bottom: 22px;
+  width: 2px;
+  background: linear-gradient(180deg, transparent, var(--gold-500) 22%, var(--gold-400) 78%, transparent);
+  opacity: 0.5;
+  transition: opacity var(--dur-m), width var(--dur-m);
+}
+.cat::after {
+  content: "";
+  position: absolute;
+  inset: -40% -60% auto auto;
+  width: 150px; height: 150px;
+  background: radial-gradient(circle, rgba(232, 201, 138, 0.3), transparent 68%);
+  opacity: 0;
+  transition: opacity var(--dur-m);
+}
+.cat:hover { transform: translateY(-5px); border-color: var(--line-strong); box-shadow: var(--shadow-1); }
+.cat:hover::before { opacity: 1; width: 3px; }
+.cat:hover::after { opacity: 0.5; }
+.cat[aria-pressed="true"] {
+  border-color: rgba(232, 201, 138, 0.7);
+  box-shadow: 0 0 0 1px rgba(232, 201, 138, 0.28), 0 18px 44px rgba(60, 46, 10, 0.45), inset 0 0 40px rgba(232, 201, 138, 0.08);
+  background:
+    radial-gradient(110% 130% at 12% 0%, rgba(232, 201, 138, 0.16), transparent 62%),
+    linear-gradient(168deg, rgba(28, 32, 60, 0.95), rgba(10, 12, 28, 0.95));
+}
+.cat[aria-pressed="true"]::before { opacity: 1; width: 3px; }
+
+.cat__name {
+  display: block;
+  font-family: var(--font-serif);
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  line-height: 1.3;
+}
+.cat__en {
+  display: block;
+  font-family: var(--font-tarot);
+  font-size: 10.5px;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--gold-500);
+  opacity: 0.9;
+  margin-top: 5px;
+}
+.cat__desc {
+  display: block;
+  margin-top: 13px;
+  padding-top: 13px;
+  border-top: 1px solid var(--line);
+  font-size: 13px;
+  color: var(--text-300);
+  line-height: 1.72;
+}
+
+/* ─── 牌阵卡片 ─── */
+.spread-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(266px, 1fr));
+  gap: 14px;
+  margin-top: 28px;
+}
+.spread {
+  position: relative;
+  text-align: left;
+  padding: 20px;
+  border-radius: var(--radius-m);
+  background: linear-gradient(168deg, rgba(19, 26, 54, 0.9), rgba(8, 11, 26, 0.94));
+  border: 1px solid var(--line);
+  transition: transform var(--dur-m) var(--ease-out), border-color var(--dur-m), box-shadow var(--dur-m);
+}
+.spread:hover { transform: translateY(-5px); border-color: var(--line-strong); box-shadow: var(--shadow-1); }
+.spread[aria-pressed="true"] {
+  border-color: rgba(232, 201, 138, 0.66);
+  box-shadow: 0 0 0 1px rgba(232, 201, 138, 0.24), 0 18px 44px rgba(60, 46, 10, 0.42);
+}
+.spread__top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.spread__name { font-family: var(--font-serif); font-size: 19px; white-space: nowrap; }
+.spread__count {
+  font-size: 11.5px;
+  color: var(--gold-400);
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+}
+.spread__desc { display: block; margin-top: 9px; font-size: 13px; color: var(--text-300); }
+.spread__slots { margin-top: 13px; display: flex; flex-wrap: wrap; gap: 6px; }
+.chip {
+  font-size: 11px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  color: var(--text-300);
+  background: rgba(10, 14, 32, 0.6);
+}
+.chip--gold { border-color: rgba(232, 201, 138, 0.36); color: var(--gold-300); }
+
+/* ─── 按钮 ─── */
+.btn {
+  --btn-bg: rgba(16, 22, 46, 0.86);
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 13px 26px;
+  border-radius: 999px;
+  border: 1px solid var(--line-strong);
+  background: var(--btn-bg);
+  color: var(--text-100);
+  font-size: 15px;
+  letter-spacing: 0.06em;
+  overflow: hidden;
+  transition: transform var(--dur-s) var(--ease-out), box-shadow var(--dur-m), border-color var(--dur-s), opacity var(--dur-s);
+}
+.btn:hover:not(:disabled) { transform: translateY(-2px); border-color: rgba(232, 201, 138, 0.6); box-shadow: 0 14px 34px rgba(0, 0, 0, 0.42); }
+.btn:active:not(:disabled) { transform: translateY(0) scale(0.985); }
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.btn--sm { padding: 9px 18px; font-size: 13px; }
+.btn--ghost { background: rgba(10, 14, 32, 0.7); }
+.btn--primary {
+  border-color: transparent;
+  background: linear-gradient(100deg, var(--whale-600), var(--whale-500) 42%, #8a7cff 100%);
+  box-shadow: 0 12px 34px rgba(52, 80, 217, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.22);
+  font-weight: 600;
+}
+.btn--primary:hover:not(:disabled) { box-shadow: 0 18px 46px rgba(52, 80, 217, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.3); }
+.btn--primary::after {
+  content: "";
+  position: absolute;
+  top: 0; left: -60%;
+  width: 40%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+  transform: skewX(-18deg);
+  animation: sheen 3.6s ease-in-out infinite;
+}
+@keyframes sheen {
+  0%, 62% { left: -60%; }
+  100% { left: 130%; }
+}
+
+.screen__foot {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  margin-top: 34px;
+}
+
+/* ─── 浮层 / 提示 ─── */
+.modal { position: fixed; inset: 0; z-index: 90; display: grid; place-items: center; padding: 22px; }
+.modal[hidden] { display: none; }
+.modal__scrim {
+  position: absolute; inset: 0;
+  background: rgba(3, 5, 14, 0.74);
+  backdrop-filter: blur(9px);
+  animation: fade-in var(--dur-m) ease both;
+}
+.modal__panel {
+  position: relative;
+  width: min(940px, 100%);
+  max-height: 88vh;
+  overflow: auto;
+  display: grid;
+  grid-template-columns: minmax(220px, 300px) 1fr;
+  gap: 26px;
+  padding: 26px;
+  border-radius: var(--radius-l);
+  border: 1px solid rgba(190, 205, 255, 0.24);
+  background:
+    radial-gradient(120% 120% at 0% 0%, rgba(77, 107, 254, 0.2), transparent 58%),
+    linear-gradient(168deg, #101736, #070a18 70%);
+  box-shadow: var(--shadow-2);
+  animation: modal-in var(--dur-m) var(--ease-out) both;
+}
+.modal__panel--doc { grid-template-columns: 1fr; width: min(760px, 100%); }
+@media (max-width: 720px) { .modal__panel { grid-template-columns: 1fr; } }
+
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes modal-in {
+  from { opacity: 0; transform: translateY(26px) scale(0.96); }
+  to   { opacity: 1; transform: none; }
+}
+.modal__close {
+  position: absolute;
+  top: 14px; right: 16px;
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: rgba(8, 11, 26, 0.8);
+  color: var(--text-300);
+  line-height: 1;
+}
+.modal__close:hover { color: #fff; border-color: var(--line-strong); }
+
+.detail__pos { font-size: 12px; letter-spacing: 0.3em; color: var(--gold-500); text-transform: uppercase; }
+.detail__name { font-size: 27px; margin-top: 5px; }
+.detail__meta { color: var(--text-400); font-size: 13px; margin-top: 6px; }
+.detail__section { margin-top: 20px; }
+.detail__section h4 {
+  font-size: 12px;
+  letter-spacing: 0.26em;
+  color: var(--gold-400);
+  margin-bottom: 7px;
+  text-transform: uppercase;
+}
+.detail__section p { color: var(--text-200); font-size: 15px; line-height: 1.86; }
+.detail__tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
+
+.doc h4 { font-size: 14px; letter-spacing: 0.18em; color: var(--gold-400); margin: 22px 0 8px; }
+.doc p, .doc li { color: var(--text-200); font-size: 14.5px; }
+.doc ul { margin: 8px 0 0; padding-left: 20px; }
+.doc li { margin-bottom: 6px; }
+.doc__note {
+  margin-top: 22px;
+  padding: 13px 16px;
+  border-radius: var(--radius-s);
+  border: 1px dashed rgba(232, 201, 138, 0.36);
+  background: rgba(58, 44, 12, 0.24);
+  color: var(--gold-300);
+  font-size: 13.5px;
+}
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 42px;
+  transform: translateX(-50%);
+  z-index: 120;
+  padding: 11px 22px;
+  border-radius: 999px;
+  background: rgba(12, 17, 38, 0.94);
+  border: 1px solid var(--line-strong);
+  color: var(--text-100);
+  font-size: 14px;
+  box-shadow: var(--shadow-1);
+  animation: toast-in var(--dur-m) var(--ease-out) both;
+}
+.toast[hidden] { display: none; }
+@keyframes toast-in {
+  from { opacity: 0; transform: translate(-50%, 16px); }
+  to   { opacity: 1; transform: translate(-50%, 0); }
+}
+
+/* 通用小工具 */
+.sr-only {
+  position: absolute; width: 1px; height: 1px;
+  padding: 0; margin: -1px; overflow: hidden;
+  clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+/* 长名字、长绰号兜底：中文本身可以任意断行，但用户输入的英文/数字
+   串（称呼、牌名里的拉丁转写）会把卡片顶宽。只在真的放不下时才断词。
+   触屏端的字号 / 命中区覆盖统一放在 app.css 末尾——那是最后加载的一张表，
+   只有放在那里才不会被本文件之后再定义的规则按源码顺序反压回去。 */
+.cat__name, .spread__name, .reading-card__name, .key-card b,
+.gallery__name, .detail__name, .slot-mini {
+  overflow-wrap: anywhere;
+}
+
+/* hidden 属性必须真的隐藏。
+   浏览器默认样式里的 [hidden]{display:none} 与 `.btn{display:inline-flex}`
+   同为 (0,1,0) 优先级，但作者样式表胜过 UA 样式表——于是带 hidden 的按钮
+   照样显示。实测「全部翻开」在 0/3 时就是可见的，只是点下去被 JS 里的
+   边界判断拦住，所以一直没被发现。 */
+[hidden] { display: none !important; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .nebula, .aurora, .btn--primary::after { animation: none !important; }
+}

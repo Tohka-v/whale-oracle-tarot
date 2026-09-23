@@ -1,0 +1,29 @@
+{
+  "chars": 1832,
+  "han": 1668,
+  "fonts": [
+    {
+      "font": "NotoSerifSC-400.woff2",
+      "before": 1507260,
+      "after": 312928,
+      "subset": "NotoSerifSC-400.subset.woff2",
+      "savedPct": 79.2
+    },
+    {
+      "font": "NotoSerifSC-600.woff2",
+      "before": 1528592,
+      "after": 317232,
+      "subset": "NotoSerifSC-600.subset.woff2",
+      "savedPct": 79.2
+    },
+    {
+      "font": "NotoSansSC-400.woff2",
+      "before": 1142552,
+      "after": 244904,
+      "subset": "NotoSansSC-400.subset.woff2",
+      "savedPct": 78.6
+    }
+  ],
+  "totalBefore": 4178404,
+  "totalAfter": 875064
+}

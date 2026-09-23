@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-no-svg="1">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>卡面生成台 · 星海鲸语</title>
+<style>
+  :root {
+    --ink:#070a18; --panel:#101736; --line:rgba(160,180,255,.18); --line2:rgba(190,205,255,.32);
+    --text:#eef2ff; --dim:#98a2c8; --gold:#e8c98a; --blue:#4d6bfe; --ok:#57d6a3; --bad:#f07a8a;
+    --font-sans:'Noto Sans SC','PingFang SC','Microsoft YaHei',system-ui,sans-serif;
+    --font-tarot:'Cinzel','Noto Serif SC',Georgia,serif;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--ink); color:var(--text); font:14px/1.7 var(--font-sans);
+         background-image:radial-gradient(900px 600px at 80% -10%, #1b2a6b55, transparent 60%),
+                          radial-gradient(700px 500px at 0% 20%, #2a1c5655, transparent 60%); }
+  a { color:var(--gold); }
+  header { padding:20px 26px; border-bottom:1px solid var(--line); display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+  h1 { font-family:var(--font-tarot); font-size:20px; margin:0; letter-spacing:.08em; }
+  .tag { font-size:12px; color:var(--dim); border:1px solid var(--line); padding:3px 10px; border-radius:99px; }
+  .wrap { display:grid; grid-template-columns: minmax(320px, 1fr) minmax(360px, 1.1fr); gap:20px; padding:20px 26px 60px; align-items:start; }
+  @media (max-width: 900px) { .wrap { grid-template-columns:1fr; } }
+  .card-panel { background:linear-gradient(168deg, #131b3f, #0a0f26); border:1px solid var(--line); border-radius:16px; padding:18px; }
+  .card-panel h2 { font-size:13px; letter-spacing:.24em; color:var(--gold); margin:0 0 14px; font-weight:400; text-transform:uppercase; }
+  label { display:block; font-size:12px; color:var(--dim); margin:12px 0 6px; letter-spacing:.06em; }
+  input, select, textarea { width:100%; padding:10px 12px; border-radius:9px; border:1px solid var(--line);
+    background:rgba(6,10,24,.8); color:var(--text); font:13px/1.6 var(--font-sans); outline:none; }
+  input:focus, select:focus, textarea:focus { border-color:var(--line2); box-shadow:0 0 0 3px rgba(77,107,254,.16); }
+  textarea { min-height:170px; resize:vertical; font-size:12.5px; }
+  .row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .row3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; }
+  .btn { display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:11px 20px; border-radius:99px;
+    border:1px solid var(--line2); background:rgba(10,14,32,.8); color:var(--text); cursor:pointer; font-size:14px;
+    transition:transform .2s, border-color .2s, box-shadow .2s; }
+  .btn:hover:not(:disabled) { transform:translateY(-1px); border-color:var(--gold); }
+  .btn:disabled { opacity:.45; cursor:not-allowed; }
+  .btn--primary { border-color:transparent; background:linear-gradient(100deg,#3450d9,#4d6bfe 45%,#8a7cff);
+    box-shadow:0 10px 30px rgba(52,80,217,.4); font-weight:600; }
+  .btn--sm { padding:7px 14px; font-size:12.5px; }
+  .actions { display:flex; gap:10px; flex-wrap:wrap; margin-top:16px; }
+  .hint { font-size:12px; color:var(--dim); margin-top:8px; line-height:1.7; }
+  .hint b { color:var(--gold); font-weight:600; }
+  .preview { display:grid; place-items:center; min-height:380px; border:1px dashed var(--line);
+    border-radius:12px; background:rgba(6,10,24,.5); overflow:hidden; position:relative; }
+  .preview img { max-width:100%; max-height:520px; display:block; }
+  .preview .ph { color:var(--dim); font-size:13px; text-align:center; padding:30px; }
+  .grid-cards { display:grid; grid-template-columns:repeat(auto-fill, minmax(96px,1fr)); gap:10px; margin-top:12px;
+    max-height:260px; overflow:auto; padding-right:6px; }
+  .pick { border:1px solid var(--line); border-radius:9px; background:rgba(8,12,28,.7); color:var(--dim);
+    padding:7px 4px; font-size:11.5px; cursor:pointer; text-align:center; line-height:1.35; }
+  .pick:hover { border-color:var(--line2); color:var(--text); }
+  .pick[aria-pressed="true"] { border-color:var(--gold); color:var(--gold); background:rgba(58,44,12,.4); }
+  .pick .done { color:var(--ok); }
+  .log { margin-top:14px; max-height:200px; overflow:auto; font:12px/1.7 ui-monospace, Consolas, monospace;
+    color:var(--dim); background:rgba(4,7,18,.7); border:1px solid var(--line); border-radius:9px; padding:10px 12px; white-space:pre-wrap; }
+  .log .ok { color:var(--ok); } .log .bad { color:var(--bad); } .log .gd { color:var(--gold); }
+  .bar { height:6px; border-radius:99px; background:rgba(140,165,255,.14); overflow:hidden; margin-top:12px; }
+  .bar > i { display:block; height:100%; width:0; background:linear-gradient(90deg,var(--blue),var(--gold)); transition:width .3s; }
+  .warn { margin-top:14px; padding:11px 14px; border-radius:9px; border:1px dashed rgba(232,201,138,.4);
+    background:rgba(58,44,12,.28); color:var(--gold); font-size:12.5px; line-height:1.75; }
+</style>
+</head>
+<body>
+<header>
+  <h1>卡面生成台</h1>
+  <span class="tag">通过服务端代理调用豆包 / 智谱 / 硅基流动出图</span>
+  <span class="tag">密钥只存在你的浏览器里</span>
+  <a href="./index.html" style="margin-left:auto">← 回到占卜</a>
+</header>
+
+<div class="wrap">
+  <section>
+    <div class="card-panel">
+      <h2>1 · 接口与密钥</h2>
+      <div class="row">
+        <div>
+          <label>服务商</label>
+          <select id="provider"></select>
+        </div>
+        <div>
+          <label>模型 ID</label>
+          <input id="model" placeholder="默认 doubao-seedream-4-5-251128" />
+        </div>
+      </div>
+      <label>API Key（只保存在本机浏览器 localStorage，不会写进任何文件）</label>
+      <input id="key" type="password" placeholder="粘贴你的 API Key" autocomplete="off" />
+      <label>图片尺寸（各家支持的尺寸不同，这里只列出该服务商可用的取值）</label>
+      <select id="size"></select>
+      <input id="sizeCustom" style="display:none;margin-top:8px" placeholder="手动输入，例如 1024x1536 或 2K" />
+      <p class="hint" id="sizeHint"></p>
+      <p class="hint">
+        <b>2026-09-24 起，本机方舟 Key 的调用权限已收窄到只允许 Seedream 4.5</b>——
+        模型 ID 请用 <b>doubao-seedream-4-5-251128</b>（留空即用默认值）。
+        填 5.0 / 3.0 系列或别的接入点都会被服务端拒绝。
+        <b>4.5 的 size 只有 2K / 4K 两档</b>（没有 3K，那是 5.0 Lite 专属），
+        固定输出 JPEG；显式像素串的积须落在 2560×1440 ~ 4096×4096。
+      </p>
+    </div>
+
+    <div class="card-panel" style="margin-top:18px">
+      <h2>2 · 选择牌与描述</h2>
+      <label>牌</label>
+      <select id="card"></select>
+      <label>英文牌名（写进提示词，可改）</label>
+      <input id="cardEn" />
+      <label>画面描述（英文效果最好，可自由改写）</label>
+      <textarea id="prompt"></textarea>
+      <div class="actions">
+        <button class="btn btn--primary" id="gen">生成这一张</button>
+        <button class="btn" id="reset">恢复默认描述</button>
+      </div>
+      <div class="bar"><i id="bar"></i></div>
+      <div class="actions">
+        <button class="btn btn--sm" id="batchAll">批量：全部 78 张</button>
+        <button class="btn btn--sm" id="batchMajor">批量：大阿卡纳 22 张</button>
+        <button class="btn btn--sm" id="stop">停止</button>
+      </div>
+      <p class="hint">
+        批量生成会按顺序逐张调用，每张间隔 4 秒，避免被限流。已有的牌默认<b>跳过</b>；
+        想重画某张，先选中它单独生成即可。
+      </p>
+    </div>
+  </section>
+
+  <section>
+    <div class="card-panel">
+      <h2>3 · 预览与结果</h2>
+      <div class="preview" id="preview">
+        <div class="ph">生成的图片会显示在这里<br />确认满意后再写入卡面</div>
+      </div>
+      <div class="actions">
+        <button class="btn btn--sm" id="save" disabled>写入卡面</button>
+        <button class="btn btn--sm" id="refresh">刷新卡面清单</button>
+        <button class="btn btn--sm" id="showLogs">查看请求记录</button>
+        <a class="btn btn--sm" href="./index.html" id="viewSite">查看站点效果</a>
+      </div>
+      <p class="hint" id="status">尚未生成。</p>
+      <div class="log" id="log"></div>
+    </div>
+
+    <div class="card-panel" style="margin-top:18px">
+      <h2>4 · 已有素材</h2>
+      <div class="grid-cards" id="existing"></div>
+      <p class="hint" id="existingInfo">点上面的「刷新卡面清单」查看状态。</p>
+    </div>
+
+    <div class="warn">
+      <b>请自行确认合规：</b>生成图片由第三方模型产出，请遵守对应服务商的使用条款；
+      用于公开发布前，请确认你拥有该模型输出的商用权利。
+      这个页面只是把接口接上，不对生成内容的版权与合规性负责。
+    </div>
+  </section>
+</div>
+
+<script type="module" src="./studio.js"></script>
+</body>
+</html>

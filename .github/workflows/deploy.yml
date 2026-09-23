@@ -1,0 +1,51 @@
+name: 发布到 GitHub Pages
+
+# 只在推 main 时跑，也可以在 Actions 页面手动触发。
+# 为什么不在 Settings 里选「Deploy from a branch」：那样会把整个仓库当网站发出去，
+# tools/（生成台、出图脚本）、维护记录、品牌原图候选全都会变成公开可访问的地址。
+# 走这里 → 只发布 tools/build-dist.mjs 组装出来的 dist/。
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 同一时间只跑一个发布；新的推上来就取消还没跑完的旧的
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # 组装 dist/ 并做引用自检：任何被 index.html / fonts.css / sw.js 引用
+      # 却不在 dist 里的文件，这一步会直接失败——宁可部署失败，也不要上线一堆 404。
+      - name: 组装发布目录
+        run: node tools/build-dist.mjs
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

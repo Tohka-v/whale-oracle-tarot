@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<title>牌背对照 · 鲸尾</title>
+<link rel="stylesheet" href="../styles/base.css" />
+<link rel="stylesheet" href="../styles/card.css" />
+<style>
+  body { margin:0; background:#070a18; display:flex; gap:26px; padding:22px; align-items:flex-start; flex-wrap:wrap; }
+  .box { display:flex; flex-direction:column; align-items:center; gap:8px; }
+  .box b { color:#98a2c8; font-size:12px; font-weight:400; letter-spacing:.1em; }
+  .card { --card-w: 300px; --card-h: 520px; }
+  .sm { --card-w: 132px; --card-h: 229px; }
+  .sig { width:300px; height:300px; }
+</style>
+</head>
+<body>
+  <div class="box"><div id="big"></div><b>牌背 · 大图</b></div>
+  <div class="box" style="flex-direction:row;gap:8px" id="row"></div>
+  <div class="box"><div class="sig" id="sig"></div><b>鲸鱼娘徽记</b></div>
+  <div class="box"><div id="brand"></div><b>品牌标记</b></div>
+<script type="module">
+import { mountCardDefs, whaleSigil, brandMark } from '../src/art/whale-back.js';
+import { createCard } from '../src/core/ui.js';
+mountCardDefs();
+
+const big = document.getElementById('big');
+big.appendChild(createCard(null));
+
+const row = document.getElementById('row');
+for (let i = 0; i < 4; i++) {
+  const holder = document.createElement('div');
+  holder.className = 'box';
+  const c = createCard(null);
+  c.classList.add('sm');
+  c.style.transform = `rotate(${(i - 1.5) * 6}deg)`;
+  holder.appendChild(c);
+  const label = document.createElement('b');
+  label.textContent = `扇形位置 ${i + 1}`;
+  holder.appendChild(label);
+  row.appendChild(holder);
+}
+
+document.getElementById('sig').innerHTML = whaleSigil(300);
+document.getElementById('brand').innerHTML = brandMark().replace('viewBox="0 0 48 48"', 'viewBox="0 0 48 48" width="120" height="120"');
+document.title = 'OK';
+</script>
+</body>
+</html>

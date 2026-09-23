@@ -1,0 +1,20 @@
+# 行尾与二进制文件的处理规则。
+#
+# 为什么需要这个文件：Windows 上 Git 默认 core.autocrlf=true（提交时 CRLF→LF，
+# 检出时 LF→CRLF）。对源码无害，但对**启动服务器.bat** 有害——那个文件是 GBK 编码的，
+# 且 cmd.exe 解析 .bat 时对行尾敏感，历史上就因为这个乱码/报错排查过一次。
+# 把它钉成「二进制、不做任何转换」，字节级原样进仓库、原样检出。
+
+* text=auto
+
+# GBK 编码的启动脚本：绝不允许 git 动它的字节
+*.bat -text
+*.cmd -text
+
+# 图片与字体本来就是二进制，显式写出来免得被当文本处理
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.ico binary
+*.woff2 binary
